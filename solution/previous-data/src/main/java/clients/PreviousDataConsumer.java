@@ -1,8 +1,12 @@
 package clients;
 
+import java.io.*;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.Random;
+import java.util.Scanner;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -25,17 +29,26 @@ public class PreviousDataConsumer {
         try {
             consumer.subscribe(Arrays.asList("hello-world-topic"));
             
+            File offsetFile = new File("part0.txt");
+            int offset = 0;
+            if (offsetFile.exists()) {
+                Scanner s = new Scanner(offsetFile);
+                offset = s.nextInt();
+            }
+            Random r = new Random();
+            int stopAfter = 1000 + r.nextInt(5000);
             // Always start from the beginning
             consumer.poll(0);
             consumer.seekToBeginning(consumer.assignment());
 
-            while (true) {
+            for (int i=0; i<stopAfter; ++i) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
                 for (ConsumerRecord<String, String> record : records) {
                     System.out.printf("offset = %d, key = %s, value = %s\n", 
                                       record.offset(), record.key(), record.value());
                 }
             }
+            
         }
         finally{
             consumer.close();
